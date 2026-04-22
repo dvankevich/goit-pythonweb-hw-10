@@ -1,7 +1,7 @@
 [project]
 name = "goit-pythonweb-hw-10"
 version = "0.1.0"
-description = ""
+description = "Simple contact list"
 authors = [
     {name = "dvankevich",email = "dvankevich@gmail.com"}
 ]
@@ -11,8 +11,8 @@ dependencies = [
     "fastapi[standard] (>=0.136.0,<0.137.0)",
     "sqlalchemy (>=2.0.49,<3.0.0)",
     "alembic (>=1.18.4,<2.0.0)",
-    "psycopg2 (>=2.9.12,<3.0.0)",
-    "pydantic-settings (>=2.14.0,<3.0.0)"
+    "pydantic-settings (>=2.14.0,<3.0.0)",
+    "psycopg2 (>=2.9.12,<3.0.0)"
 ]
 
 
