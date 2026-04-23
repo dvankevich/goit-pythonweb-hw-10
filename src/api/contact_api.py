@@ -10,6 +10,14 @@ router = APIRouter(prefix="/contacts", tags=["contacts"])
 
 @router.post("/", response_model=ContactResponse, status_code=status.HTTP_201_CREATED)
 def create_contact(contact: ContactCreate, db: Session = Depends(get_db)):
+    existing_contact = contact_repository.get_by_email(db, email=contact.email)
+
+    if existing_contact:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Contact with email '{contact.email}' already exists.",
+        )
+
     return contact_repository.create(db, contact)
 
 
@@ -44,12 +52,21 @@ def read_contact(contact_id: int, db: Session = Depends(get_db)):
 
 @router.put("/{contact_id}", response_model=ContactResponse)
 def update_contact(contact_id: int, body: ContactUpdate, db: Session = Depends(get_db)):
+    if body.email:
+        existing_contact = contact_repository.get_by_email(db, email=body.email)
+
+        if existing_contact and existing_contact.id != contact_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Email '{body.email}' is already taken by another contact.",
+            )
 
     updated_contact = contact_repository.update(db, contact_id, body)
 
     if updated_contact is None:
         raise HTTPException(
-            status_code=404, detail=f"Contact with id {contact_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Contact with id {contact_id} not found",
         )
 
     return updated_contact

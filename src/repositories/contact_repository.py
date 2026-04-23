@@ -28,7 +28,7 @@ def get_all(
         today = date.today()
         # Generate a list of "MM-DD" strings for the next 7 days
         upcoming_dates = [
-            (today + timedelta(days=i)).strftime("%m-%d") for i in range(8)
+            (today + timedelta(days=i)).strftime("%m-%d") for i in range(7)
         ]
 
         # ignore year
@@ -39,6 +39,11 @@ def get_all(
 
 def get_by_id(db: Session, contact_id: int):
     return db.get(Contact, contact_id)
+
+
+def get_by_email(db: Session, email: str):
+    stmt = select(Contact).where(Contact.email == email)
+    return db.execute(stmt).scalar_one_or_none()
 
 
 def create(db: Session, contact_data: ContactCreate):
