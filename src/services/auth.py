@@ -1,8 +1,8 @@
+import bcrypt
 from datetime import datetime, timedelta, UTC
 from typing import Optional
 
 from fastapi import Depends, HTTPException, status
-from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import JWTError, jwt
@@ -13,13 +13,16 @@ from src.services.users import UserService
 
 
 class Hash:
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-    def verify_password(self, plain_password, hashed_password):
-        return self.pwd_context.verify(plain_password, hashed_password)
+    def verify_password(self, plain_password: str, hashed_password: str):
+        password_byte = plain_password.encode("utf-8")
+        hashed_byte = hashed_password.encode("utf-8")
+        return bcrypt.checkpw(password_byte, hashed_byte)
 
     def get_password_hash(self, password: str):
-        return self.pwd_context.hash(password)
+        # Обрізаємо до 72 байт для безпеки bcrypt
+        password_byte = password.encode("utf-8")[:72]
+        salt = bcrypt.gensalt()
+        return bcrypt.hashpw(password_byte, salt).decode("utf-8")
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
