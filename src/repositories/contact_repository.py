@@ -1,18 +1,18 @@
-from typing import Optional
+from typing import Optional, List
 from datetime import date, timedelta
 from sqlalchemy import select, func
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import Contact
 from src.schemas.contact import ContactCreate, ContactUpdate
 
 
-def get_all(
-    db: Session,
+async def get_all(
+    db: AsyncSession,
     first_name: str | None = None,
     last_name: str | None = None,
     email: str | None = None,
     upcoming_birthdays: bool = False,
-):
+) -> List[Contact]:
 
     stmt = select(Contact)
 
@@ -23,41 +23,39 @@ def get_all(
     if email:
         stmt = stmt.where(Contact.email.ilike(f"%{email}%"))
 
-    # birthday filter
     if upcoming_birthdays:
         today = date.today()
-        # Generate a list of "MM-DD" strings for the next 7 days
         upcoming_dates = [
             (today + timedelta(days=i)).strftime("%m-%d") for i in range(7)
         ]
-
-        # ignore year
         stmt = stmt.where(func.to_char(Contact.birthday, "MM-DD").in_(upcoming_dates))
 
-    return db.scalars(stmt).all()
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
 
 
-def get_by_id(db: Session, contact_id: int):
-    return db.get(Contact, contact_id)
+async def get_by_id(db: AsyncSession, contact_id: int) -> Optional[Contact]:
+    return await db.get(Contact, contact_id)
 
 
-def get_by_email(db: Session, email: str):
+async def get_by_email(db: AsyncSession, email: str) -> Optional[Contact]:
     stmt = select(Contact).where(Contact.email == email)
-    return db.execute(stmt).scalar_one_or_none()
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
 
 
-def create(db: Session, contact_data: ContactCreate):
+async def create(db: AsyncSession, contact_data: ContactCreate) -> Contact:
     db_contact = Contact(**contact_data.model_dump())
     db.add(db_contact)
-    db.commit()
-    db.refresh(db_contact)
+    await db.commit()
+    await db.refresh(db_contact)
     return db_contact
 
 
-def update(
-    db: Session, contact_id: int, contact_data: ContactUpdate
+async def update(
+    db: AsyncSession, contact_id: int, contact_data: ContactUpdate
 ) -> Optional[Contact]:
-    db_contact = db.get(Contact, contact_id)
+    db_contact = await db.get(Contact, contact_id)
     if not db_contact:
         return None
 
@@ -66,15 +64,15 @@ def update(
     for key, value in update_data.items():
         setattr(db_contact, key, value)
 
-    db.commit()
-    db.refresh(db_contact)
+    await db.commit()
+    await db.refresh(db_contact)
     return db_contact
 
 
-def delete(db: Session, contact_id: int) -> bool:
-    contact = get_by_id(db, contact_id)
+async def delete(db: AsyncSession, contact_id: int) -> bool:
+    contact = await get_by_id(db, contact_id)
     if contact:
-        db.delete(contact)
-        db.commit()
+        await db.delete(contact)
+        await db.commit()
         return True
     return False
