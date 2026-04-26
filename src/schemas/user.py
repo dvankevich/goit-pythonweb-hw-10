@@ -1,25 +1,20 @@
-from datetime import datetime
-from typing import List, Optional
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from typing import Optional
 
-# Схема користувача
-class User(BaseModel):
+class UserResponse(BaseModel):
     id: int
     username: str
-    email: str
-    avatar: str
-
+    email: EmailStr
+    avatar: Optional[str] = None 
     model_config = ConfigDict(from_attributes=True)
 
 
-# Схема для запиту реєстрації
 class UserCreate(BaseModel):
-    username: str
-    email: str
-    password: str
+    username: str = Field(min_length=3, max_length=50)
+    email: EmailStr
+    password: str = Field(min_length=6, max_length=100)
 
 
-# Схема для токену
 class Token(BaseModel):
     access_token: str
-    token_type: str
+    token_type: str = "bearer"
