@@ -3,6 +3,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     DATABASE_URL: str
+    JWT_SECRET: str
+    JWT_ALGORITHM: str = "HS256"  # Алгоритм шифрування токенів
+    JWT_EXPIRATION_SECONDS: int = 3600  # Час дії токена (1 година)    
     LOG_LEVEL: str = "INFO"
 
     model_config = SettingsConfigDict(

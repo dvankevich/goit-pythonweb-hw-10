@@ -17,6 +17,16 @@ POSTGRES_DB=<database_name>
 POSTGRES_HOST=<hostname or IP address>
 POSTGRES_PORT=<port. default 5432>
 ```
+#### Generate a secure JSON Web Token (JWT) secret key by
+```bash
+openssl rand -base64 32
+```
+set JWT parameters in .env file
+```
+JWT_SECRET=<secret_key>
+JWT_ALGORITHM=HS256"
+JWT_EXPIRATION_SECONDS=3600
+```
 #### create database via CLI
 ```bash
 psql -U postgres # if postgesql in your host
