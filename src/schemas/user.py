@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional
 
-class UserResponse(BaseModel):
+class User(BaseModel):
     id: int
     username: str
     email: EmailStr
