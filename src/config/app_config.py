@@ -1,5 +1,6 @@
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import List
 
 
 class Settings(BaseSettings):
@@ -13,6 +14,14 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_SECONDS: int = 3600
     LOG_LEVEL: str = "INFO"
+
+    CORS_ALLOWED_ORIGINS: str = Field(
+        default="http://localhost:3000,http://localhost:5173"
+    )
+
+    @property
+    def CORS_ORIGINS_LIST(self) -> List[str]:
+        return [origin.strip() for origin in self.CORS_ALLOWED_ORIGINS.split(",")]
 
     # async for FastAPI/SQLAlchemy
     @property
