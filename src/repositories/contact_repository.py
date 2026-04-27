@@ -1,6 +1,6 @@
 from typing import Optional, List
 from datetime import date, timedelta
-from sqlalchemy import select, func
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import Contact
 from src.schemas.contact import ContactCreate, ContactUpdate
@@ -8,13 +8,14 @@ from src.schemas.contact import ContactCreate, ContactUpdate
 
 async def get_all(
     db: AsyncSession,
+    user_id: int,
     first_name: str | None = None,
     last_name: str | None = None,
     email: str | None = None,
     upcoming_birthdays: bool = False,
 ) -> List[Contact]:
 
-    stmt = select(Contact)
+    stmt = select(Contact).where(Contact.user_id == user_id)
 
     if first_name:
         stmt = stmt.where(Contact.first_name.ilike(f"%{first_name}%"))
@@ -34,18 +35,28 @@ async def get_all(
     return list(result.scalars().all())
 
 
-async def get_by_id(db: AsyncSession, contact_id: int) -> Optional[Contact]:
-    return await db.get(Contact, contact_id)
-
-
-async def get_by_email(db: AsyncSession, email: str) -> Optional[Contact]:
-    stmt = select(Contact).where(Contact.email == email)
+async def get_by_id(
+    db: AsyncSession, contact_id: int, user_id: int
+) -> Optional[Contact]:
+    stmt = select(Contact).where(
+        and_(Contact.id == contact_id, Contact.user_id == user_id)
+    )
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
 
-async def create(db: AsyncSession, contact_data: ContactCreate) -> Contact:
-    db_contact = Contact(**contact_data.model_dump())
+async def get_by_email(db: AsyncSession, email: str, user_id: int) -> Optional[Contact]:
+    stmt = select(Contact).where(
+        and_(Contact.email == email, Contact.user_id == user_id)
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def create(
+    db: AsyncSession, contact_data: ContactCreate, user_id: int
+) -> Contact:
+    db_contact = Contact(**contact_data.model_dump(), user_id=user_id)
     db.add(db_contact)
     await db.commit()
     await db.refresh(db_contact)
@@ -53,9 +64,9 @@ async def create(db: AsyncSession, contact_data: ContactCreate) -> Contact:
 
 
 async def update(
-    db: AsyncSession, contact_id: int, contact_data: ContactUpdate
+    db: AsyncSession, contact_id: int, contact_data: ContactUpdate, user_id: int
 ) -> Optional[Contact]:
-    db_contact = await db.get(Contact, contact_id)
+    db_contact = await get_by_id(db, contact_id, user_id)
     if not db_contact:
         return None
 
@@ -69,8 +80,8 @@ async def update(
     return db_contact
 
 
-async def delete(db: AsyncSession, contact_id: int) -> bool:
-    contact = await get_by_id(db, contact_id)
+async def delete(db: AsyncSession, contact_id: int, user_id: int) -> bool:
+    contact = await get_by_id(db, contact_id, user_id)
     if contact:
         await db.delete(contact)
         await db.commit()
