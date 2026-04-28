@@ -3,9 +3,12 @@ from pathlib import Path
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from fastapi_mail.errors import ConnectionErrors
 from pydantic import EmailStr, NameEmail
+import logging
 
 from src.services.auth import create_email_token
 from src.config.app_config import settings
+
+logger = logging.getLogger(__name__)
 
 conf = ConnectionConfig(
     MAIL_USERNAME=settings.MAIL_USERNAME,
@@ -39,4 +42,4 @@ async def send_email(email: EmailStr, username: str, host: str):
         fm = FastMail(conf)
         await fm.send_message(message, template_name="verify_email.html")
     except ConnectionErrors as err:
-        print(err)
+        logger.error(f"Error connecting to email server: {err}")

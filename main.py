@@ -1,4 +1,5 @@
 import uvicorn
+import logging
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware  # Імпортуємо Middleware
 from starlette.responses import JSONResponse
@@ -10,6 +11,11 @@ from src.api.contact_api import router as contact_router
 from src.api import auth, users
 from src.api.users import limiter
 from src.config.app_config import settings
+
+logging.basicConfig(
+    level=settings.LOG_LEVEL,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
 
 app = FastAPI(title="Contacts API")
 app.state.limiter = limiter
