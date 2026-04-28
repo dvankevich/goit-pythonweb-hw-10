@@ -17,7 +17,10 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 
-app = FastAPI(title="Contacts API")
+app = FastAPI(
+    title="Contacts API"
+    # title="Contacts API", swagger_ui_parameters={"defaultModelsExpandDepth": -1} # щоб прибрати схему
+)
 app.state.limiter = limiter
 
 # --- CORS ---
