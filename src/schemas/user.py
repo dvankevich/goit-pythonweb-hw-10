@@ -18,3 +18,6 @@ class UserCreate(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+class RequestEmail(BaseModel):
+    email: EmailStr

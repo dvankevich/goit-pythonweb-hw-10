@@ -2,7 +2,7 @@ import bcrypt
 from datetime import datetime, timedelta, UTC
 from typing import Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import JWTError, jwt
@@ -66,3 +66,25 @@ async def get_current_user(
     if user is None:
         raise credentials_exception
     return user
+
+
+def create_email_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.now(UTC) + timedelta(days=7)
+    to_encode.update({"iat": datetime.now(UTC), "exp": expire})
+    token = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+    return token
+
+
+async def get_email_from_token(token: str):
+    try:
+        payload = jwt.decode(
+            token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
+        )
+        email = payload["sub"]
+        return email
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Неправильний токен для перевірки електронної пошти",
+        )
