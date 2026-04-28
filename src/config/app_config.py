@@ -1,22 +1,22 @@
-from pydantic import Field, field_validator, EmailStr
+from pydantic import Field, field_validator, EmailStr, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 
 
 class Settings(BaseSettings):
-    POSTGRES_USER: str = Field(default="postgres")
-    POSTGRES_PASSWORD: str = Field(default="567234")
-    POSTGRES_DB: str = Field(default="contacts_db")
-    POSTGRES_HOST: str = Field(default="localhost")
-    POSTGRES_PORT: int = Field(default=5432)
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "567234"
+    POSTGRES_DB: str = "contacts_db"
+    POSTGRES_HOST: str = "localhost"
+    POSTGRES_PORT: int = 5432
 
-    JWT_SECRET: str = Field(default="your_secret_key")
+    JWT_SECRET: str = "your_secret_key"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_SECONDS: int = 3600
     LOG_LEVEL: str = "INFO"
 
     MAIL_USERNAME: EmailStr = "example@meta.ua"
-    MAIL_PASSWORD: str = "secretPassword"
+    MAIL_PASSWORD: SecretStr = SecretStr("your_default_password_here")
     MAIL_FROM: EmailStr = "example@meta.ua"
     MAIL_PORT: int = 465
     MAIL_SERVER: str = "smtp.meta.ua"

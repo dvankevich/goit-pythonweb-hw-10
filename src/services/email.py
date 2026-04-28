@@ -2,7 +2,7 @@ from pathlib import Path
 
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from fastapi_mail.errors import ConnectionErrors
-from pydantic import EmailStr
+from pydantic import EmailStr, NameEmail
 
 from src.services.auth import create_email_token
 from src.config.app_config import settings
@@ -27,7 +27,7 @@ async def send_email(email: EmailStr, username: str, host: str):
         token_verification = create_email_token({"sub": email})
         message = MessageSchema(
             subject="Confirm your email",
-            recipients=[email],
+            recipients=[NameEmail(name=username, email=email)],
             template_body={
                 "host": host,
                 "username": username,
