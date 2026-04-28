@@ -21,6 +21,8 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255))
     avatar: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    confirmed: Mapped[bool] = mapped_column(default=False)
+    # confirmed: Mapped[bool] = mapped_column(default=False, server_default=sa.text("false")) # check on new database
     contacts: Mapped[List["Contact"]] = relationship(
         "Contact", back_populates="user", cascade="all, delete-orphan"
     )
