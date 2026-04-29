@@ -1,8 +1,11 @@
+import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from libgravatar import Gravatar
 
 from src.repositories.user_repository import UserRepository
 from src.schemas.user import UserCreate
+
+logger = logging.getLogger(__name__)
 
 
 class UserService:
@@ -15,7 +18,7 @@ class UserService:
             g = Gravatar(body.email)
             avatar = g.get_image()
         except Exception as e:
-            print(e)
+            logger.error(f"Error fetching avatar from Gravatar: {e}")
 
         return await self.repository.create_user(body, avatar)
 
@@ -30,3 +33,6 @@ class UserService:
 
     async def confirmed_email(self, email: str):
         return await self.repository.confirmed_email(email)
+
+    async def update_avatar_url(self, email: str, url: str):
+        return await self.repository.update_avatar_url(email, url)

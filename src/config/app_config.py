@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     USE_CREDENTIALS: bool = True
     VALIDATE_CERTS: bool = True
 
+
+    CLD_NAME: str = "cloud"
+    CLD_API_KEY: int = 326488457974591
+    CLD_API_SECRET: str = "secret"
+
     CORS_ALLOWED_ORIGINS: str = Field(
         default="http://localhost:3000,http://localhost:5173"
     )

@@ -1,8 +1,12 @@
+import logging
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import User
 from src.schemas.user import UserCreate
+
+logger = logging.getLogger(__name__)
 
 
 class UserRepository:
@@ -37,5 +41,21 @@ class UserRepository:
 
     async def confirmed_email(self, email: str) -> None:
         user = await self.get_user_by_email(email)
-        user.confirmed = True
+        if user:
+            user.confirmed = True
+            await self.db.commit()
+
+    async def update_avatar_url(self, email: str, url: str) -> User:
+        user = await self.get_user_by_email(email)
+
+        # Перевірка на існування користувача
+        if user is None:
+            logger.error(f"Attempted to update avatar for non-existent user: {email}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+
+        user.avatar = url
         await self.db.commit()
+        await self.db.refresh(user)
+        return user

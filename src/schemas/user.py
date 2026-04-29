@@ -1,11 +1,13 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional
+from datetime import datetime
+
 
 class User(BaseModel):
     id: int
     username: str
     email: EmailStr
-    avatar: Optional[str] = None 
+    avatar: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -15,9 +17,20 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=6, max_length=100)
 
 
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: EmailStr
+    avatar: str | None
+    created_at: datetime
+    confirmed: bool
+    model_config = ConfigDict(from_attributes=True)
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
 
 class RequestEmail(BaseModel):
     email: EmailStr
