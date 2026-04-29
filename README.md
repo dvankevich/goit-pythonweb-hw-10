@@ -58,7 +58,30 @@ alembic upgrade head
 fastapi dev main.py
 ```
 
-
 Server started at http://127.0.0.1:8000
 
 Documentation at http://127.0.0.1:8000/docs
+
+### build docker container
+```bash
+docker build -t hw10-fastapi-app .
+```
+
+### run app docker container with postgesql on host
+```bash
+docker run -d \
+  --name contacts-fastapi-app \
+  -p 8000:8000 \
+  --add-host=host.docker.internal:host-gateway \
+  --env-file .env \
+  -e POSTGRES_HOST=host.docker.internal \
+  hw10-fastapi-app
+```
+#### view logs
+```bash
+docker logs -f contacts-fastapi-app
+```
+#### remove container
+```bash
+docker rm -f contacts-fastapi-app
+```
