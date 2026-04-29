@@ -85,3 +85,13 @@ docker logs -f contacts-fastapi-app
 ```bash
 docker rm -f contacts-fastapi-app
 ```
+#### inspect container. show container size
+```bash
+docker inspect contacts-fastapi-app --size | grep SizeR
+docker inspect --size --format='{{.SizeRw}} , {{.SizeRootFs}}' contacts-fastapi-app
+```
+#### container full rebuild
+```bash
+docker rm -f contacts-fastapi-app
+docker build --no-cache -t hw10-fastapi-app .
+```

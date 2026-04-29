@@ -44,6 +44,9 @@ COPY --from=builder /app/.venv /app/.venv
 # Копіюємо код застосунку
 COPY . .
 
+# Компілюємо весь код проекту ТА всі встановлені залежності у venv
+RUN python -m compileall /app/.venv/lib/python3.13/site-packages .
+
 # Експонуємо порт
 EXPOSE 8000
 
