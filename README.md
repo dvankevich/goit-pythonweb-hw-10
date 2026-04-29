@@ -99,3 +99,12 @@ docker inspect --size --format='{{.SizeRw}} , {{.SizeRootFs}}' contacts-fastapi-
 docker rm -f contacts-fastapi-app
 docker build --no-cache -t hw10-fastapi-app .
 ```
+
+### run with docker compose
+```bash
+docker-compose up -d --build
+```
+#### connect to database in internal docker network
+```bash
+docker exec -it hw10_postgres_db psql -U postgres -d contacts_db
+```

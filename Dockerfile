@@ -46,6 +46,8 @@ COPY --from=builder /app/.venv /app/.venv
 # Копіюємо код застосунку
 COPY . .
 
+RUN chmod +x /app/entrypoint.sh
+
 # Компілюємо весь код проекту ТА всі встановлені залежності у venv
 RUN python -m compileall /app/.venv/lib/python3.13/site-packages . /usr/local/lib/python3.13
 
@@ -55,6 +57,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD curl --fail http://localhost:8000/healthcheck || exit 1
 
-# Запускаємо застосунок через uvicorn
-# Зверніть увагу: main:app має відповідати вашій точці входу
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["/app/entrypoint.sh"]
