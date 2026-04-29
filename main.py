@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from src.db.session import get_db
 from src.api.contact_api import router as contact_router
-from src.api import auth, users
+from src.api import auth, users, health
 from src.api.users import limiter
 from src.config.app_config import settings
 
@@ -41,7 +41,7 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
         content={"error": "Перевищено ліміт запитів. Спробуйте пізніше."},
     )
 
-
+app.include_router(health.router)
 app.include_router(contact_router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
