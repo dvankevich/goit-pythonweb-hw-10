@@ -81,6 +81,10 @@ docker run -d \
 ```bash
 docker logs -f contacts-fastapi-app
 ```
+#### view healthcheck history
+```bash
+docker inspect --format='{{json .State.Health}}' contacts-fastapi-app
+```
 #### remove container
 ```bash
 docker rm -f contacts-fastapi-app

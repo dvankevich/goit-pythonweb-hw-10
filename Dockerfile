@@ -35,7 +35,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
@@ -46,7 +47,7 @@ COPY --from=builder /app/.venv /app/.venv
 COPY . .
 
 # Компілюємо весь код проекту ТА всі встановлені залежності у venv
-RUN python -m compileall /app/.venv/lib/python3.13/site-packages .
+RUN python -m compileall /app/.venv/lib/python3.13/site-packages . /usr/local/lib/python3.13
 
 # Експонуємо порт
 EXPOSE 8000
