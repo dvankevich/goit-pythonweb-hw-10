@@ -30,6 +30,7 @@ FROM python:3.13-slim AS runtime
 # Встановлюємо libpq для роботи з PostgreSQL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 ENV VIRTUAL_ENV=/app/.venv \
@@ -49,6 +50,9 @@ RUN python -m compileall /app/.venv/lib/python3.13/site-packages .
 
 # Експонуємо порт
 EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD curl --fail http://localhost:8000/healthcheck || exit 1
 
 # Запускаємо застосунок через uvicorn
 # Зверніть увагу: main:app має відповідати вашій точці входу
