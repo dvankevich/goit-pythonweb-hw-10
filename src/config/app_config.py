@@ -24,16 +24,16 @@ class Settings(BaseSettings):
     JWT_EXPIRATION_SECONDS: int = Field(default=3600)
 
     # ============================
-    # Налаштування Email (FastAPI-Mail)
+    # Email (Brevo)
     # ============================
-    MAIL_USERNAME: EmailStr = Field(default="example@meta.ua")
-    MAIL_PASSWORD: SecretStr = Field(default=SecretStr("your_default_password_here"))
-    MAIL_FROM: EmailStr = Field(default="example@meta.ua")
-    MAIL_SERVER: str = Field(default="smtp.meta.ua")
-    MAIL_PORT: int = Field(default=465)
+    MAIL_USERNAME: EmailStr = Field(default="example@brevo.com")
+    MAIL_PASSWORD: SecretStr = Field(default=SecretStr("xsmtpsib-your-brevo-smtp-key"))
+    MAIL_FROM: EmailStr = Field(default="example@brevo.com")
+    MAIL_SERVER: str = Field(default="smtp-relay.brevo.com")
+    MAIL_PORT: int = Field(default=587)
     MAIL_FROM_NAME: str = Field(default="Contacts API")
-    MAIL_STARTTLS: bool = Field(default=False)
-    MAIL_SSL_TLS: bool = Field(default=True)
+    MAIL_STARTTLS: bool = Field(default=True)
+    MAIL_SSL_TLS: bool = Field(default=False)
     USE_CREDENTIALS: bool = Field(default=True)
     VALIDATE_CERTS: bool = Field(default=True)
 

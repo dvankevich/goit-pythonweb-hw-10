@@ -1,18 +1,20 @@
 from pathlib import Path
+import logging
 
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from fastapi_mail.errors import ConnectionErrors
 from pydantic import EmailStr, NameEmail
-import logging
 
 from src.services.auth import create_email_token
 from src.config.app_config import settings
 
 logger = logging.getLogger(__name__)
 
-conf = ConnectionConfig(
+
+# Створюємо ConnectionConfig правильно, враховуючи SecretStr
+email_conf = ConnectionConfig(
     MAIL_USERNAME=settings.MAIL_USERNAME,
-    MAIL_PASSWORD=settings.MAIL_PASSWORD,
+    MAIL_PASSWORD=settings.MAIL_PASSWORD,  # передаємо SecretStr як є
     MAIL_FROM=settings.MAIL_FROM,
     MAIL_PORT=settings.MAIL_PORT,
     MAIL_SERVER=settings.MAIL_SERVER,
@@ -28,6 +30,7 @@ conf = ConnectionConfig(
 async def send_email(email: EmailStr, username: str, host: str):
     try:
         token_verification = create_email_token({"sub": email})
+
         message = MessageSchema(
             subject="Confirm your email",
             recipients=[NameEmail(name=username, email=email)],
@@ -39,7 +42,12 @@ async def send_email(email: EmailStr, username: str, host: str):
             subtype=MessageType.html,
         )
 
-        fm = FastMail(conf)
+        fm = FastMail(email_conf)  # використовуємо email_conf
         await fm.send_message(message, template_name="verify_email.html")
+
+        logger.info(f"Verification email successfully sent to {email}")
+
     except ConnectionErrors as err:
-        logger.error(f"Error connecting to email server: {err}")
+        logger.error(f"Error connecting to email server for {email}: {err}")
+    except Exception as err:
+        logger.error(f"Unexpected error sending email to {email}: {err}", exc_info=True)
