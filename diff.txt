@@ -1,0 +1,350 @@
+diff --git a/.env.example b/.env.example
+index ed1ef3a..919dc14 100644
+--- a/.env.example
++++ b/.env.example
+@@ -1,5 +1,5 @@
+ POSTGRES_USER=postgres
+-POSTGRES_PASSWORD=567234
++POSTGRES_PASSWORD=strong_password_here
+ POSTGRES_DB=contacts_db
+ POSTGRES_HOST=localhost
+ POSTGRES_PORT=5432
+diff --git a/README.md b/README.md
+index 6dd909f..e1e90cc 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,4 @@
+-## goit-pythonweb-hw-08
++## goit-pythonweb-hw-10
+ Simple contactlist CRUD API
+ ### run project
+ ```bash
+diff --git a/src/config/app_config.py b/src/config/app_config.py
+index 13eda72..e55cfd5 100644
+--- a/src/config/app_config.py
++++ b/src/config/app_config.py
+@@ -1,61 +1,102 @@
+-from pydantic import Field, field_validator, EmailStr, SecretStr
++from pydantic import Field, EmailStr, field_validator
+ from pydantic_settings import BaseSettings, SettingsConfigDict
++from pydantic import SecretStr
+ from typing import List
+ 
+ 
+ class Settings(BaseSettings):
+-    POSTGRES_USER: str = "postgres"
+-    POSTGRES_PASSWORD: str = "567234"
+-    POSTGRES_DB: str = "contacts_db"
+-    POSTGRES_HOST: str = "localhost"
+-    POSTGRES_PORT: int = 5432
+-
+-    JWT_SECRET: str = "your_secret_key"
+-    JWT_ALGORITHM: str = "HS256"
+-    JWT_EXPIRATION_SECONDS: int = 3600
+-    LOG_LEVEL: str = "INFO"
+-
+-    MAIL_USERNAME: EmailStr = "example@meta.ua"
+-    MAIL_PASSWORD: SecretStr = SecretStr("your_default_password_here")
+-    MAIL_FROM: EmailStr = "example@meta.ua"
+-    MAIL_PORT: int = 465
+-    MAIL_SERVER: str = "smtp.meta.ua"
+-    MAIL_FROM_NAME: str = "Rest API Service"
+-    MAIL_STARTTLS: bool = False
+-    MAIL_SSL_TLS: bool = True
+-    USE_CREDENTIALS: bool = True
+-    VALIDATE_CERTS: bool = True
+-
+-
+-    CLD_NAME: str = "cloud"
+-    CLD_API_KEY: int = 326488457974591
+-    CLD_API_SECRET: str = "secret"
++    # ============================
++    # База даних PostgreSQL
++    # ============================
++    POSTGRES_USER: str = Field(default="postgres")
++    POSTGRES_PASSWORD: SecretStr = Field(default=SecretStr("567234"))
++    POSTGRES_DB: str = Field(default="contacts_db")
++    POSTGRES_HOST: str = Field(default="localhost")
++    POSTGRES_PORT: int = Field(default=5432)
+ 
++    # ============================
++    # JWT Автентифікація
++    # ============================
++    JWT_SECRET: SecretStr = Field(
++        default=SecretStr("your_super_secret_jwt_key_change_in_production")
++    )
++    JWT_ALGORITHM: str = Field(default="HS256")
++    JWT_EXPIRATION_SECONDS: int = Field(default=3600)
++
++    # ============================
++    # Email (Brevo)
++    # ============================
++    MAIL_USERNAME: EmailStr = Field(default="example@brevo.com")
++    MAIL_PASSWORD: SecretStr = Field(default=SecretStr("xsmtpsib-your-brevo-smtp-key"))
++    MAIL_FROM: EmailStr = Field(default="example@brevo.com")
++    MAIL_SERVER: str = Field(default="smtp-relay.brevo.com")
++    MAIL_PORT: int = Field(default=587)
++    MAIL_FROM_NAME: str = Field(default="Contacts API")
++    MAIL_STARTTLS: bool = Field(default=True)
++    MAIL_SSL_TLS: bool = Field(default=False)
++    USE_CREDENTIALS: bool = Field(default=True)
++    VALIDATE_CERTS: bool = Field(default=True)
++
++    # ============================
++    # Cloudinary
++    # ============================
++    CLD_NAME: str = Field(default="cloud")
++    CLD_API_KEY: str = Field(default="326488457974591")
++    CLD_API_SECRET: SecretStr = Field(default=SecretStr("secret"))
++
++    # ============================
++    # CORS
++    # ============================
+     CORS_ALLOWED_ORIGINS: str = Field(
+-        default="http://localhost:3000,http://localhost:5173"
++        default="http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000"
+     )
+ 
++    # ============================
++    # Логування
++    # ============================
++    LOG_LEVEL: str = Field(default="INFO")
++
++    # ============================
++    # Property методи
++    # ============================
++
+     @property
+     def CORS_ORIGINS_LIST(self) -> List[str]:
+-        return [origin.strip() for origin in self.CORS_ALLOWED_ORIGINS.split(",")]
++        return [origin.strip() for origin in self.CORS_ALLOWED_ORIGINS.split(",") if origin.strip()]
+ 
+-    # async for FastAPI/SQLAlchemy
+     @property
+     def DATABASE_URL(self) -> str:
+-        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
++        password = self.POSTGRES_PASSWORD.get_secret_value()
++        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{password}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+ 
+-    # sync for Alembic
+     @property
+     def SYNC_DATABASE_URL(self) -> str:
+-        return f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
++        password = self.POSTGRES_PASSWORD.get_secret_value()
++        return f"postgresql+psycopg2://{self.POSTGRES_USER}:{password}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+ 
+     @property
+     def DB_ECHO(self) -> bool:
+-        return self.LOG_LEVEL == "DEBUG"
++        return self.LOG_LEVEL.upper() == "DEBUG"
+ 
+-    model_config = SettingsConfigDict(
+-        env_file=".env", env_file_encoding="utf-8", extra="ignore", case_sensitive=True
+-    )
++    # ============================
++    # Валідація
++    # ============================
++
++    @field_validator("JWT_SECRET")
++    @classmethod
++    def validate_jwt_secret(cls, v: SecretStr) -> SecretStr:
++        if len(v.get_secret_value()) < 32:
++            raise ValueError("JWT_SECRET повинен бути не коротшим за 32 символи")
++        return v
++
++    @field_validator("LOG_LEVEL")
++    @classmethod
++    def validate_log_level(cls, v: str) -> str:
++        valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
++        if v.upper() not in valid_levels:
++            raise ValueError(f"LOG_LEVEL повинен бути одним з: {valid_levels}")
++        return v.upper()
+ 
+ 
+-settings = Settings()
++# Глобальний екземпляр налаштувань
++settings = Settings()
+\ No newline at end of file
+diff --git a/src/services/auth.py b/src/services/auth.py
+index 6455e3e..37ea49f 100644
+--- a/src/services/auth.py
++++ b/src/services/auth.py
+@@ -7,8 +7,8 @@ from fastapi.security import OAuth2PasswordBearer
+ from sqlalchemy.ext.asyncio import AsyncSession
+ from jose import JWTError, jwt
+ 
+-from src.config.app_config import settings
+ from src.db.session import get_db
++from src.config.app_config import settings
+ from src.services.users import UserService
+ 
+ 
+@@ -28,23 +28,67 @@ class Hash:
+ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+ 
+ 
+-# define a function to generate a new access token
++# ====================== JWT TOKENS ======================
++
+ async def create_access_token(data: dict, expires_delta: Optional[int] = None):
++    """Створення access токена для авторизації"""
+     to_encode = data.copy()
++
+     if expires_delta:
+         expire = datetime.now(UTC) + timedelta(seconds=expires_delta)
+     else:
+         expire = datetime.now(UTC) + timedelta(seconds=settings.JWT_EXPIRATION_SECONDS)
++
+     to_encode.update({"exp": expire})
++
++    # Важливо: розпаковуємо SecretStr в звичайний рядок
++    secret_key = settings.JWT_SECRET.get_secret_value()
++
+     encoded_jwt = jwt.encode(
+-        to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
++        to_encode, secret_key, algorithm=settings.JWT_ALGORITHM
+     )
+     return encoded_jwt
+ 
+ 
++def create_email_token(data: dict):
++    """Створення токена для підтвердження email"""
++    to_encode = data.copy()
++    expire = datetime.now(UTC) + timedelta(days=7)
++    to_encode.update({"iat": datetime.now(UTC), "exp": expire})
++
++    # Розпаковуємо SecretStr
++    secret_key = settings.JWT_SECRET.get_secret_value()
++
++    token = jwt.encode(to_encode, secret_key, algorithm=settings.JWT_ALGORITHM)
++    return token
++
++
++async def get_email_from_token(token: str):
++    """Отримання email з токена підтвердження"""
++    try:
++        secret_key = settings.JWT_SECRET.get_secret_value()
++
++        payload = jwt.decode(
++            token, secret_key, algorithms=[settings.JWT_ALGORITHM]
++        )
++        email = payload.get("sub")
++        if email is None:
++            raise HTTPException(
++                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
++                detail="Неправильний токен для перевірки електронної пошти",
++            )
++        return email
++    except JWTError:
++        raise HTTPException(
++            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
++            detail="Неправильний токен для перевірки електронної пошти",
++        )
++
++
+ async def get_current_user(
+     token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
+ ):
++    """Отримання поточного користувача з JWT токена"""
+     credentials_exception = HTTPException(
+         status_code=status.HTTP_401_UNAUTHORIZED,
+         detail="Could not validate credentials",
+@@ -52,39 +96,20 @@ async def get_current_user(
+     )
+ 
+     try:
+-        # Decode JWT
++        secret_key = settings.JWT_SECRET.get_secret_value()
++
+         payload = jwt.decode(
+-            token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
++            token, secret_key, algorithms=[settings.JWT_ALGORITHM]
+         )
+-        username = payload["sub"]
++        username = payload.get("sub")
+         if username is None:
+             raise credentials_exception
+-    except JWTError as e:
++    except JWTError:
+         raise credentials_exception
++
+     user_service = UserService(db)
+     user = await user_service.get_user_by_username(username)
+     if user is None:
+         raise credentials_exception
+-    return user
+ 
+-
+-def create_email_token(data: dict):
+-    to_encode = data.copy()
+-    expire = datetime.now(UTC) + timedelta(days=7)
+-    to_encode.update({"iat": datetime.now(UTC), "exp": expire})
+-    token = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+-    return token
+-
+-
+-async def get_email_from_token(token: str):
+-    try:
+-        payload = jwt.decode(
+-            token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
+-        )
+-        email = payload["sub"]
+-        return email
+-    except JWTError as e:
+-        raise HTTPException(
+-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+-            detail="Неправильний токен для перевірки електронної пошти",
+-        )
++    return user
+\ No newline at end of file
+diff --git a/src/services/email.py b/src/services/email.py
+index 345f0cb..1bf7c4b 100644
+--- a/src/services/email.py
++++ b/src/services/email.py
+@@ -1,18 +1,20 @@
+ from pathlib import Path
++import logging
+ 
+ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
+ from fastapi_mail.errors import ConnectionErrors
+ from pydantic import EmailStr, NameEmail
+-import logging
+ 
+ from src.services.auth import create_email_token
+ from src.config.app_config import settings
+ 
+ logger = logging.getLogger(__name__)
+ 
+-conf = ConnectionConfig(
++
++# Створюємо ConnectionConfig правильно, враховуючи SecretStr
++email_conf = ConnectionConfig(
+     MAIL_USERNAME=settings.MAIL_USERNAME,
+-    MAIL_PASSWORD=settings.MAIL_PASSWORD,
++    MAIL_PASSWORD=settings.MAIL_PASSWORD,  # передаємо SecretStr як є
+     MAIL_FROM=settings.MAIL_FROM,
+     MAIL_PORT=settings.MAIL_PORT,
+     MAIL_SERVER=settings.MAIL_SERVER,
+@@ -28,6 +30,7 @@ conf = ConnectionConfig(
+ async def send_email(email: EmailStr, username: str, host: str):
+     try:
+         token_verification = create_email_token({"sub": email})
++
+         message = MessageSchema(
+             subject="Confirm your email",
+             recipients=[NameEmail(name=username, email=email)],
+@@ -39,7 +42,12 @@ async def send_email(email: EmailStr, username: str, host: str):
+             subtype=MessageType.html,
+         )
+ 
+-        fm = FastMail(conf)
++        fm = FastMail(email_conf)  # використовуємо email_conf
+         await fm.send_message(message, template_name="verify_email.html")
++
++        logger.info(f"Verification email successfully sent to {email}")
++
+     except ConnectionErrors as err:
+-        logger.error(f"Error connecting to email server: {err}")
++        logger.error(f"Error connecting to email server for {email}: {err}")
++    except Exception as err:
++        logger.error(f"Unexpected error sending email to {email}: {err}", exc_info=True)
