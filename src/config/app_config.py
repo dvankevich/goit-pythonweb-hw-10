@@ -1,61 +1,102 @@
-from pydantic import Field, field_validator, EmailStr, SecretStr
+from pydantic import Field, EmailStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import SecretStr
 from typing import List
 
 
 class Settings(BaseSettings):
-    POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "567234"
-    POSTGRES_DB: str = "contacts_db"
-    POSTGRES_HOST: str = "localhost"
-    POSTGRES_PORT: int = 5432
+    # ============================
+    # База даних PostgreSQL
+    # ============================
+    POSTGRES_USER: str = Field(default="postgres")
+    POSTGRES_PASSWORD: SecretStr = Field(default=SecretStr("567234"))
+    POSTGRES_DB: str = Field(default="contacts_db")
+    POSTGRES_HOST: str = Field(default="localhost")
+    POSTGRES_PORT: int = Field(default=5432)
 
-    JWT_SECRET: str = "your_secret_key"
-    JWT_ALGORITHM: str = "HS256"
-    JWT_EXPIRATION_SECONDS: int = 3600
-    LOG_LEVEL: str = "INFO"
-
-    MAIL_USERNAME: EmailStr = "example@meta.ua"
-    MAIL_PASSWORD: SecretStr = SecretStr("your_default_password_here")
-    MAIL_FROM: EmailStr = "example@meta.ua"
-    MAIL_PORT: int = 465
-    MAIL_SERVER: str = "smtp.meta.ua"
-    MAIL_FROM_NAME: str = "Rest API Service"
-    MAIL_STARTTLS: bool = False
-    MAIL_SSL_TLS: bool = True
-    USE_CREDENTIALS: bool = True
-    VALIDATE_CERTS: bool = True
-
-
-    CLD_NAME: str = "cloud"
-    CLD_API_KEY: int = 326488457974591
-    CLD_API_SECRET: str = "secret"
-
-    CORS_ALLOWED_ORIGINS: str = Field(
-        default="http://localhost:3000,http://localhost:5173"
+    # ============================
+    # JWT Автентифікація
+    # ============================
+    JWT_SECRET: SecretStr = Field(
+        default=SecretStr("your_super_secret_jwt_key_change_in_production")
     )
+    JWT_ALGORITHM: str = Field(default="HS256")
+    JWT_EXPIRATION_SECONDS: int = Field(default=3600)
+
+    # ============================
+    # Налаштування Email (FastAPI-Mail)
+    # ============================
+    MAIL_USERNAME: EmailStr = Field(default="example@meta.ua")
+    MAIL_PASSWORD: SecretStr = Field(default=SecretStr("your_default_password_here"))
+    MAIL_FROM: EmailStr = Field(default="example@meta.ua")
+    MAIL_SERVER: str = Field(default="smtp.meta.ua")
+    MAIL_PORT: int = Field(default=465)
+    MAIL_FROM_NAME: str = Field(default="Contacts API")
+    MAIL_STARTTLS: bool = Field(default=False)
+    MAIL_SSL_TLS: bool = Field(default=True)
+    USE_CREDENTIALS: bool = Field(default=True)
+    VALIDATE_CERTS: bool = Field(default=True)
+
+    # ============================
+    # Cloudinary
+    # ============================
+    CLD_NAME: str = Field(default="cloud")
+    CLD_API_KEY: str = Field(default="326488457974591")
+    CLD_API_SECRET: SecretStr = Field(default=SecretStr("secret"))
+
+    # ============================
+    # CORS
+    # ============================
+    CORS_ALLOWED_ORIGINS: str = Field(
+        default="http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000"
+    )
+
+    # ============================
+    # Логування
+    # ============================
+    LOG_LEVEL: str = Field(default="INFO")
+
+    # ============================
+    # Property методи
+    # ============================
 
     @property
     def CORS_ORIGINS_LIST(self) -> List[str]:
-        return [origin.strip() for origin in self.CORS_ALLOWED_ORIGINS.split(",")]
+        return [origin.strip() for origin in self.CORS_ALLOWED_ORIGINS.split(",") if origin.strip()]
 
-    # async for FastAPI/SQLAlchemy
     @property
     def DATABASE_URL(self) -> str:
-        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        password = self.POSTGRES_PASSWORD.get_secret_value()
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{password}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
-    # sync for Alembic
     @property
     def SYNC_DATABASE_URL(self) -> str:
-        return f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        password = self.POSTGRES_PASSWORD.get_secret_value()
+        return f"postgresql+psycopg2://{self.POSTGRES_USER}:{password}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     @property
     def DB_ECHO(self) -> bool:
-        return self.LOG_LEVEL == "DEBUG"
+        return self.LOG_LEVEL.upper() == "DEBUG"
 
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore", case_sensitive=True
-    )
+    # ============================
+    # Валідація
+    # ============================
+
+    @field_validator("JWT_SECRET")
+    @classmethod
+    def validate_jwt_secret(cls, v: SecretStr) -> SecretStr:
+        if len(v.get_secret_value()) < 32:
+            raise ValueError("JWT_SECRET повинен бути не коротшим за 32 символи")
+        return v
+
+    @field_validator("LOG_LEVEL")
+    @classmethod
+    def validate_log_level(cls, v: str) -> str:
+        valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+        if v.upper() not in valid_levels:
+            raise ValueError(f"LOG_LEVEL повинен бути одним з: {valid_levels}")
+        return v.upper()
 
 
+# Глобальний екземпляр налаштувань
 settings = Settings()
